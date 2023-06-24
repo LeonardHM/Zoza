@@ -1,0 +1,184 @@
+<html>
+<head>
+    <script>
+        // Função para atualizar a quantidade de um item
+        function updateQuantity(item, change) {
+            // Obter o elemento que mostra a quantidade atual
+            var quantityElement = document.getElementById(item + "-quantity");
+            // Obter o valor atual da quantidade
+            var quantity = parseInt(quantityElement.innerHTML);
+            // Verificar se a mudança é válida (não pode ser negativa)
+            if (quantity + change >= 0) {
+                // Atualizar a quantidade com a mudança
+                quantity = quantity + change;
+                // Atualizar o elemento com o novo valor
+                quantityElement.innerHTML = quantity;
+                // Atualizar o total do pedido
+                updateTotal();
+            }
+        }
+
+        // Função para atualizar o total do pedido
+        function updateTotal() {
+            // Obter os elementos que mostram as quantidades e os preços dos itens
+            var burgerQuantity = parseInt(document.getElementById("burger-quantity").innerHTML);
+            var burgerPrice = parseFloat(document.getElementById("burger-price").innerHTML);
+            var friesQuantity = parseInt(document.getElementById("fries-quantity").innerHTML);
+            var friesPrice = parseFloat(document.getElementById("fries-price").innerHTML);
+            var drinkQuantity = parseInt(document.getElementById("drink-quantity").innerHTML);
+            var drinkPrice = parseFloat(document.getElementById("drink-price").innerHTML);
+            // Calcular o total do pedido
+            var total = burgerQuantity * burgerPrice + friesQuantity * friesPrice + drinkQuantity * drinkPrice;
+            // Obter o elemento que mostra o total do pedido
+            var totalElement = document.getElementById("total");
+            // Atualizar o elemento com o novo valor
+            totalElement.innerHTML = total.toFixed(2);
+        }
+
+        // Função para enviar o pedido para a api de pagamentos do telegram
+        function sendOrder() {
+            // Obter os elementos que mostram as quantidades dos itens
+            var burgerQuantity = parseInt(document.getElementById("burger-quantity").innerHTML);
+            var friesQuantity = parseInt(document.getElementById("fries-quantity").innerHTML);
+            var drinkQuantity = parseInt(document.getElementById("drink-quantity").innerHTML);
+            // Obter o elemento que mostra o total do pedido
+            var total = parseFloat(document.getElementById("total").innerHTML);
+            // Verificar se o pedido não está vazio
+            if (total > 0) {
+                // Criar uma string com os dados do pedido
+                var orderData = "Pedido: ";
+                if (burgerQuantity > 0) {
+                    orderData += burgerQuantity + " x Burger ";
+                }
+                if (friesQuantity > 0) {
+                    orderData += friesQuantity + " x Fries ";
+                }
+                if (drinkQuantity > 0) {
+                    orderData += drinkQuantity + " x Drink ";
+                }
+                orderData += "Total: R$ " + total;
+                // Enviar os dados do pedido para a api de pagamentos do telegram usando o método switch_inline_query_chosen_chat
+                TelegramWebApp.switch_inline_query_chosen_chat(orderData);
+            } else {
+                // Mostrar uma mensagem de erro se o pedido estiver vazio
+                alert("Por favor, escolha pelo menos um item.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Bem-vindo ao Durger King!</h1>
+    <p>Escolha os itens que você deseja pedir:</p>
+    <table>
+        <tr>
+            <td>Burger</td>
+            <td>R$ <span id="burger-price">10.00</span></td>
+            <td><button onclick="updateQuantity('burger', -1)">-</button></td>
+            <td><span id="burger-quantity">0</span></td>
+            <td><button onclick="updateQuantity('burger', 1)">+</button></td>
+        </tr>
+        <tr>
+            <td>Fries</td>
+            <td>R$ <span id="fries-price">5.00</span></td>
+            <td><button onclick="updateQuantity('fries', -1)">-</button></td>
+            <td><span id="fries-quantity">0</span></td>
+            <td><button onclick="updateQuantity('fries', 1)">+</button></td>
+        </tr>
+        <tr>
+            <td>Drink</td>
+            <td>R$ <span id="drink-price">3.00</span></td>
+            <td><button onclick="updateQuantity('drink', -1)">-</button></td>
+            <td><span id="drink-quantity">0</span></td>
+            <td><button onclick="updateQuantity('drink', 1)">+</button></td>
+        </tr>
+    </table>
+    <p>Total do pedido: R$ <span id="total">0.00</span></p>
+    <p><button onclick="sendOrder()">Enviar pedido</button></p>
+</body>
+</html>
+
+
+
+<html>
+<head>
+    <script src="https://telegram.org/js/telegram-web-api.js"></script>
+</head>
+<body>
+    <h1>Webapp de exemplo</h1>
+    <div id="info"></div>
+    <div id="products"></div>
+    <script>
+        // Initialize the WebApp class
+        var webApp = new WebApp();
+
+        // Get the data passed by the inline button
+        var botToken = webApp.initData.data.bot_token;
+        var paymentToken = webApp.initData.data.payment_token;
+
+        // Get the user, chat and theme information
+        var user = webApp.user;
+        var chat = webApp.chat;
+        var themeParams = webApp.themeParams;
+
+        // Display the information in the page
+        var infoDiv = document.getElementById("info");
+        infoDiv.innerHTML = `
+            <p>User: ${user.first_name} ${user.last_name} (${user.id})</p>
+            <p>Chat: ${chat.title} (${chat.id})</p>
+            <p>Theme: ${themeParams.name}</p>
+        `;
+
+        // Create some products to sell
+        var products = [
+            {
+                name: "Camiseta",
+                price: 50,
+                description: "Uma camiseta branca com o logo do Telegram"
+            },
+            {
+                name: "Caneca",
+                price: 30,
+                description: "Uma caneca azul com o logo do Telegram"
+            },
+            {
+                name: "Adesivo",
+                price: 10,
+                description: "Um adesivo redondo com o logo do Telegram"
+            }
+        ];
+
+        // Display the products in the page
+        var productsDiv = document.getElementById("products");
+        products.forEach(function(product, index) {
+            var productDiv = document.createElement("div");
+            productDiv.innerHTML = `
+                <h2>${product.name}</h2>
+                <p>${product.description}</p>
+                <p>R$ ${product.price}</p>
+                <button id="buy${index}">Comprar</button>
+            `;
+            productsDiv.appendChild(productDiv);
+
+            // Add a click event listener to the buy button
+            var buyButton = document.getElementById("buy" + index);
+            buyButton.addEventListener("click", function() {
+                // Create an invoice object for the product
+                var invoice = {
+                    title: product.name,
+                    description: product.description,
+                    payload: "payload",
+                    provider_token: paymentToken,
+                    start_parameter: "start_parameter",
+                    currency: "BRL",
+                    prices: [
+                        { label: product.name, amount: product.price * 100 }
+                    ]
+                };
+
+                // Open the invoice in a modal window
+                webApp.openInvoice(invoice);
+            });
+        });
+    </script>
+</body>
+</html>
